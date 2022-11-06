@@ -139,10 +139,10 @@ void main() {
     float Vc = SmithG_GGX(NdL, 0.0) * SmithG_GGX(NdV, 0.0);
     float Frc = Dc * Vc * Fc;
 
-    vec3 final = saturate(0.15 + 3.0 * fresnel) * (diffuseIBL + specularIBL);
+    vec3 final = saturate(0.2 + 3.0 * fresnel) * (diffuseIBL + specularIBL);
     final = colorBlur.rgb - F_Schlick(NdV, 0.04, 1.0) + final;
     final += Frc;
-    final += 3.0 * smoothstep(0.0, 1.0, fresnel * fresnel);
+    final += 4.0 * smoothstep(0.0, 1.0, fresnel * fresnel);
     final *= mask;
 
     float alpha = clamp(color.a + 0.01, 0.0, 1.0) * mask;
