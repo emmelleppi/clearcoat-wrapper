@@ -74,6 +74,7 @@ export default function Model() {
 		const instanceRands = new Float32Array(BALLS_NUM * 4);
 		const instanceColors = new Float32Array(BALLS_NUM * 3);
 
+    // adds custom attributes for the color and physics simulation
 		for (let i = 0, i3 = 0, i4 = 0; i < BALLS_NUM; i++, i3 += 3, i4 += 4) {
 			instanceIds[i] = i;
 			
@@ -114,6 +115,7 @@ export default function Model() {
     return geometry
   })[0]
 
+  // init custom depth material for the shadowmap rendering with InstancedBufferGeometry
   const customDepthMaterial = useState(() => {
     const customDepthMaterial = new THREE.MeshDepthMaterial();
      
@@ -128,6 +130,7 @@ export default function Model() {
   
   const uniforms = useMemo(
     () => Object.assign(
+      // THREE.UniformsLib.lights info are needed for the shadowmap
       THREE.UniformsUtils.merge([THREE.UniformsLib.lights]),
       {
         u_dt: { value: 0 },
@@ -193,6 +196,7 @@ export default function Model() {
   }, [palette, mesh])
 
   useFrame(({ mouse }, dt) => {
+    // updates uniforms
     mesh.material.uniforms.u_dt.value = dt;
     mesh.material.uniforms.u_time.value += dt;
     mesh.material.uniforms.u_sparklesMap.value = noiseTexture;
@@ -202,7 +206,8 @@ export default function Model() {
     mesh.material.uniforms.u_lut.value = lut;
     mesh.material.uniforms.u_envDiffuse.value = envDiffuse;
     mesh.material.uniforms.u_envSpecular.value = envSpecular;
-
+    
+    // updates physics simulation
     const { a_instancePositionScale, a_instanceRotation, a_instanceVelocity, a_instanceRands } = mesh.geometry.attributes
 
     for (let i = 0; i < BALLS_NUM; i++ ) {
@@ -218,6 +223,8 @@ export default function Model() {
 
       _v0.multiplyScalar(Math.pow(0.8, dt));
 
+      // for each ball I do collision checks with the remaining ones
+      // pretty much like this -> https://threejs.org/examples/?q=ball#webxr_vr_ballshooter
       for ( let j = i + 1; j < BALLS_NUM; j++ ) {
         _ps1.fromBufferAttribute(a_instancePositionScale, j);
         _v1.fromBufferAttribute(a_instanceVelocity, j);
@@ -243,6 +250,7 @@ export default function Model() {
         }
       }
 
+      // check collisions with the pointer
       _ps1.set(2 * mouse.x, 2 * mouse.y, 0, 0.5)
       _p1.set(_ps1.x, _ps1.y, _ps1.z)
       _v1.set((_ps1.x - _mouse.x) / dt, (_ps1.y - _mouse.y) / dt, 0)
@@ -261,19 +269,21 @@ export default function Model() {
         _v0.sub( _normal );
       }
       
+      // adds fake rotation
       const speed = _v0.length();
       const angle = 5 * speed * dt;
       
       _temp3.fromBufferAttribute(a_instanceRands, i)
       _temp3.normalize()
       _temp3.multiplyScalar(Math.sin(angle));
-
+      
       _q0.x = _temp3.x;
       _q0.y = _temp3.y;
       _q0.z = _temp3.z;
       _q0.w = Math.cos(angle);
       _q0.multiply(_q1);
       
+      // updates attributes
       a_instancePositionScale.array[i * 4 + 0] = _p0.x
       a_instancePositionScale.array[i * 4 + 1] = _p0.y
       a_instancePositionScale.array[i * 4 + 2] = _p0.z
