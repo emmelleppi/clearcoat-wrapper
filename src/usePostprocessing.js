@@ -17,7 +17,7 @@ import customVert from "./customPass.vert"
 import customFrag from "./customPass.frag"
 import { useTexture } from "@react-three/drei";
 
-const myShaderMaterial = new THREE.ShaderMaterial({
+const customPassMaterial = new THREE.ShaderMaterial({
   uniforms: {
     u_time: new THREE.Uniform(0),
     u_diffuse: new THREE.Uniform(null),
@@ -54,7 +54,6 @@ function usePostprocessing({ lut, envDiffuse, envSpecular }) {
     )
     return [rt.clone(), rt.clone(), rt.clone()]
   })[0]
-  const [outputNormBuffer, outputPosBuffer, buffer] = buffers
 
   const rt = useState(() => {
     const renderTarget = new THREE.WebGLMultipleRenderTargets(
@@ -82,7 +81,7 @@ function usePostprocessing({ lut, envDiffuse, envSpecular }) {
   })[0];
 
   const pipeline = useMemo(() => {
-    const CUSTOM = new ShaderPass(myShaderMaterial, 'u_diffuse')
+    const CUSTOM = new ShaderPass(customPassMaterial, 'u_diffuse')
     
     const MMBLUR = new MipmapBlurPass()
     MMBLUR.levels = 4
@@ -111,6 +110,7 @@ function usePostprocessing({ lut, envDiffuse, envSpecular }) {
     return [CUSTOM, BLUR, MMBLUR, EFX];
   }, [gl, scene, camera, rt]);
 
+  const [outputNormBuffer, outputPosBuffer, buffer] = buffers
   const [customPass, blurPass, mmBlurPass, efxPass] = pipeline
 
   useEffect(() => {
@@ -126,35 +126,42 @@ function usePostprocessing({ lut, envDiffuse, envSpecular }) {
   ])
 
   useFrame((_, delta) => {
+    // renders the main scene with the WebGLMultipleRenderTargets
     gl.setRenderTarget( rt );
     gl.render( scene, camera ); 
     
+    // mipmap blur for the color texture
     mmBlurPass.render(gl, {
       texture: rt.texture[ 0 ],
       width: rt.width,
       height: rt.height
     }, null, delta, false)
     rt.texture[ 0 ].mipmaps = mmBlurPass.downsamplingMipmaps
-
+    
+    // blurs for the normal texture
     blurPass.render(gl, {
       texture: rt.texture[ 1 ],
     }, outputNormBuffer, delta, false)
     
+    // blurs for the world position texture
     blurPass.render(gl, {
       texture: rt.texture[ 2 ],
     }, outputPosBuffer, delta, false)
     
-    myShaderMaterial.uniforms.u_time.value += delta
-    myShaderMaterial.uniforms.u_distortion.value = distortionTexture
-    myShaderMaterial.uniforms.u_diffuse.value = rt.texture[ 0 ]
-    myShaderMaterial.uniforms.u_worldPositionMap.value = rt.texture[ 2 ]
-    myShaderMaterial.uniforms.u_blurredNormalDirect.value = outputNormBuffer.texture
-    myShaderMaterial.uniforms.u_blurredPositionFresnel.value = outputPosBuffer.texture
-    myShaderMaterial.uniforms.u_lut.value = lut
-    myShaderMaterial.uniforms.u_envDiffuse.value = envDiffuse
-    myShaderMaterial.uniforms.u_envSpecular.value = envSpecular
+    customPassMaterial.uniforms.u_time.value += delta
+    customPassMaterial.uniforms.u_distortion.value = distortionTexture
+    customPassMaterial.uniforms.u_diffuse.value = rt.texture[ 0 ]
+    customPassMaterial.uniforms.u_worldPositionMap.value = rt.texture[ 2 ]
+    customPassMaterial.uniforms.u_blurredNormalDirect.value = outputNormBuffer.texture
+    customPassMaterial.uniforms.u_blurredPositionFresnel.value = outputPosBuffer.texture
+    customPassMaterial.uniforms.u_lut.value = lut
+    customPassMaterial.uniforms.u_envDiffuse.value = envDiffuse
+    customPassMaterial.uniforms.u_envSpecular.value = envSpecular
     
+    // renders the clearcoat-wrapper effect on the original color texture
     customPass.render(gl, null, buffer, delta, false)
+
+    // adds postprocessing efx
     efxPass.render(gl, buffer, null, delta, false)
   }, 1);
 }
