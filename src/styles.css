@@ -1,7 +1,10 @@
 html,
 body {
   margin: 0;
-  overflow: hidden;
+  -webkit-overflow-scrolling: touch;
+	overflow: hidden;
+	overscroll-behavior: none;
+  touch-action: none;
 }
 
 .App {
