@@ -217,13 +217,13 @@ void main () {
     vec3 plainN = inverseTransformDirection( normalize( v_normal ) * faceDirection, viewMatrix );
     float plainNdV = clamp(abs(dot(plainN, V)), 0.001, 1.0);
 
-	vec3 dxy = max( abs( dFdx( plainN ) ), abs( dFdy( plainN ) ) );
+	vec3 dxy = max( abs( dFdx( N ) ), abs( dFdy( N ) ) );
 	float geometryRoughness = max( max( dxy.x, dxy.y ), dxy.z );
 	float roughness = MIN_ROUGHNESS;
 	roughness += geometryRoughness;
 
     vec3 f0 = vec3(0.04);
-    vec3 baseColor = saturate(v_color + 0.15);
+    vec3 baseColor = saturate(v_color);
     
     vec3 diffuseColor = baseColor * (vec3(1.0) - f0);
     vec3 specularColor = f0;
@@ -242,8 +242,8 @@ void main () {
     vec3 specularIBL;
     getIBLContribution(diffuseIBL, specularIBL, NdV, roughness, N, reflection, diffuseColor, specularColor);
 
-    vec3 final = (0.5 * NdL + smoothstep(-0.2, 1.6, NdL)) * (diffuseContrib + specContrib);
-    final += 0.6 * (diffuseIBL + specularIBL);
+    vec3 final = (0.5 * NdL + smoothstep(-0.2, 1.4, NdL)) * (diffuseContrib + specContrib);
+    final += (diffuseIBL + specularIBL);
 	final *= mix(0.25, 1.0, getShadowMask());
 
     g_color = vec4(final, saturate(exp(4.0 - v_fogDepth * v_fogDepth)));

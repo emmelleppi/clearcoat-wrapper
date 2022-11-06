@@ -95,8 +95,8 @@ function usePostprocessing({ lut, envDiffuse, envSpecular }) {
     BLOOM.resolution.height = 360;
     BLOOM.blurPass.kernelSize = 1;
     BLOOM.blurPass.scale = 1;
-    BLOOM.intensity = 0.8
-    BLOOM.luminanceMaterial.threshold = 0.3;
+    BLOOM.intensity = 2
+    BLOOM.luminanceMaterial.threshold = 0.6;
     BLOOM.luminanceMaterial.smoothing = 0.1;
     BLOOM.inputColorSpace = THREE.LinearEncoding
     BLOOM.outputColorSpace = THREE.sRGBEncoding
