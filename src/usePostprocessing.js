@@ -90,21 +90,27 @@ function usePostprocessing({ lut, envDiffuse, envSpecular }) {
     BLUR.scale = 3
     BLUR.kernelSize = KernelSize.VERY_LARGE
 
-    const BLOOM = new BloomEffect()
-    BLOOM.blendMode = new BlendMode(BlendFunction.COLOR_DODGE)
-    BLOOM.resolution.height = 360;
-    BLOOM.blurPass.kernelSize = 1;
-    BLOOM.blurPass.scale = 1;
-    BLOOM.intensity = 2
-    BLOOM.luminanceMaterial.threshold = 0.6;
-    BLOOM.luminanceMaterial.smoothing = 0.1;
+    const BLOOM = new BloomEffect({
+      mipmapBlur: true,
+      radius: 1,
+      intensity: 2,
+      luminanceThreshold: 0.1,
+      luminanceSmoothing: 0.02,
+    })
+    const BLOOM2 = new BloomEffect({
+      mipmapBlur: true,
+      radius: 0.1,
+      intensity: 1,
+      luminanceThreshold: 0.6,
+      luminanceSmoothing: 0.1,
+    })
     BLOOM.inputColorSpace = THREE.LinearEncoding
     BLOOM.outputColorSpace = THREE.sRGBEncoding
     
     const lut = LookupTexture3D.from(lutTexture);
 		const LUT = new LUT3DEffect(lut)
 
-    const EFX = new EffectPass(camera, BLOOM, LUT)
+    const EFX = new EffectPass(camera, BLOOM, BLOOM2)
     EFX.initialize(gl, 0, THREE.HalfFloatType);
 
     return [CUSTOM, BLUR, MMBLUR, EFX];

@@ -8,7 +8,7 @@ export default function App() {
   return (
     <div className="App">
       <Canvas
-        dpr={[1, 1.5]}
+        dpr={[1, 2]}
         camera={{ position: [0, 0, 2], fov: 70, near: 0.01, far: 10 }}
         gl={{
           powerPreference: "high-performance",
